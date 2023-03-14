@@ -24,7 +24,7 @@ class MyClient():
 
     def uploadFile(self, filename):
         filePath = os.path.join(self.downloadUploadDir, filename)
-        if os.path.exists(filePath):  # if the file exists
+        if os.path.exists(filePath) and len(filename) != 0:  # if the file exists
             self.sendFile(filename)
         else:
             print("Illegal Filename. Try Again")
