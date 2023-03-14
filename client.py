@@ -10,10 +10,12 @@ class MyClient():
         self.SERVER_PORT = SERVER_PORT
         self.downloadUploadDir = downloadUploadDir
         self.sslSock = ssl_sock
+
+
     def start(self):  # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # Connecting to remote computer 9124
-        ssl_sock = ssl.wrap_socket(sock)  # add a layer of security
+        ssl_sock = ssl.wrap_socket(sock)  # add a security layer
         server_address = (self.SERVER_IP, self.SERVER_PORT)
         ssl_sock.connect(server_address)
         self.sslSock = ssl_sock
@@ -21,33 +23,42 @@ class MyClient():
                     
 
     def uploadFile(self, filename):
-        self.sslSock.send("1 {}".format(filename).encode())
-        if len(filename) != 0:
-            print("start uploading")
-            with open(os.path.join(self.downloadUploadDir, filename), 'rb') as file_to_read:
-                for data in file_to_read:
-                    self.sslSock.sendall(data)
-                self.sslSock.sendall("The upload is completed".encode())
-                print("The upload is completed")
+        filePath = os.path.join(self.downloadUploadDir, filename)
+        if os.path.exists(filePath):  # if the file exists
+            self.sendFile(filename)
         else:
             print("Illegal Filename. Try Again")
 
 
+    def sendFile(self, filename):
+        filePath = os.path.join(self.downloadUploadDir, filename)
+        with open(filePath, 'rb') as file_to_read:
+            FileSize = os.path.getsize(filePath)
+            if FileSize != 0:
+                self.sslSock.send("1 {} {}".format(filename, FileSize).encode())
+                print(self.sslSock.recv(1024).decode())  # a message from the server that he is starting to upload the file
+                fileContent = file_to_read.read()
+                self.sslSock.send(fileContent)
+                print(self.sslSock.recv(1024).decode())  # a message from the server that he finished the upload
+            else:
+                print("ERROR: the file is empty")
+
+
     def downloadFile(self, filename):
         self.sslSock.send("2 {}".format(filename).encode())
-        message = self.sslSock.recv(1024).decode()
-        print(message)
-        if message != "start downloading":  #  we get this message from the server iff filename is legal
+        message = self.sslSock.recv(22).decode()  # 22 because the length of the first message in this case is 21 bytes long
+        message = message.split(",")
+        print(message[0])
+        if message[0] != "start downloading":  #  we get this message from the server iff filename is legal
             return
         
         with open(os.path.join(self.downloadUploadDir, filename), 'wb') as file_to_write:
-            while True:
-                data = self.sslSock.recv(1024)       
-                if data == b'download finished':  # no more data to write to the file
-                    print("download is finished")
-                    break
-                file_to_write.write(data)
-            file_to_write.close()  # not sure if needed becasue of the usage of "with open"
+            fileSize = int(message[1])
+            data = self.sslSock.recv(fileSize)       
+            file_to_write.write(data)
+            end_message = self.sslSock.recv(17).decode()
+            print(end_message)
+        file_to_write.close()  # not sure if needed becasue of the usage of "with open"
 
     
     def availableFiles(self):
