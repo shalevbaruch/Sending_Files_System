@@ -20,20 +20,20 @@ class My_Server():
             case '2':  # the client wants to download a a file
                 self.case2(ssl_client_soc, client_msg)
                 
-            case '3':  # request the list of the available files that the server holds
+            case '3':  # the client requests the list of the available files that the server holds
                 fileList = " ".join(self.FILES_LIST)
+                print(fileList)
                 ssl_client_soc.send("The available files to download are: {}".format(fileList).encode())
                 
-            case '4':
-                ssl_client_soc.send("end of conversation".encode())
+            case '4':  # the client wants to close the connection
                 raise ValueError("end of conversation")  # creating exception to close the socket
             case _:
-                ssl_client_soc.send("error - command option not found\n".encode())  # not in the protocol rules
+                ssl_client_soc.send("error - command option not found\n".encode())  # not in the protocol rules, actually can't get here
 
 
     def case1(self, ssl_client_soc, client_msg): 
-        filename = client_msg[1:].strip()  # the name of the file that the client wants to upload
-        if len(filename) != 0:  # if the name of the file is legal (more than one letter)
+        filename = client_msg[1:].strip()  # the name of the file that the client wants to upload, strip to remove the first space
+        if len(filename) != 0:  # if the name of the file is legal (more than one character)
             with open(os.path.join(self.FILES_DIR_PATH, filename), 'wb') as file_to_write:
                 while True:
                     data = ssl_client_soc.recv(1024)
