@@ -18,27 +18,6 @@ class MyClient():
         ssl_sock.connect(server_address)
         self.sslSock = ssl_sock
         print(self.sslSock.recv(4096).decode())  # the server sends a "Welcome" message
-        # while True:
-        #     x = 1
-                # try:
-                #     client_msg = input("Select an option\n1 + File Name - Upload a file\n"
-                #                     "2 + File Name - Download a file\n3 - Get List of files\n4 - exit\n")
-                # except:
-                #     print("forced_close, connection cut off")
-                #     break
-                # else:
-                #     self.sslSock.send(client_msg.encode())
-                #     if len(client_msg) == 0:
-                #         print("ERROR: COMMAND NOT FOUND. TRY AGAIN")
-                #     elif client_msg[0] == "1":  # the client wants to upload a file to the server
-                #         self.case1(client_msg)
-                #     elif  client_msg[0] == "2":  # the client wants to download a file from the server
-                #         self.case2(client_msg)
-                #     else:  # means client_msg[0] == 3 or client_msg[0] == 4 or invalid message
-                #         message_from_server = self.sslSock.recv(4096).decode()
-                #         print(message_from_server)
-                #         if message_from_server == "end of conversation":
-                #             break
                     
 
     def uploadFile(self, filename):
