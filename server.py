@@ -55,14 +55,14 @@ def case2(server, ssl_client_soc, client_msg):
 
 
 
-class My_Server():
+class My_Server:
 
-    def __init__(self, LISTEN_PORT, SIMULTANEOUS_REQUESTS_LIMIT, FILES_DIR_PATH, FILES_LIST=[], HANDLE=handle) -> None:
+    def __init__(self, LISTEN_PORT, SIMULTANEOUS_REQUESTS_LIMIT, FILES_DIR_PATH=None, FILES_LIST=[], HANDLE=handle) -> None:
         self.LISTEN_PORT = LISTEN_PORT
         self.SIMULTANEOUS_REQUESTS_LIMIT = SIMULTANEOUS_REQUESTS_LIMIT
         self.FILES_LIST = FILES_LIST
         self.FILES_DIR_PATH = FILES_DIR_PATH
-            
+        self.HANDLE = HANDLE
 
     def start(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listen_socket:
@@ -86,7 +86,7 @@ class My_Server():
                         try:
                             client_msg = connection.recv(4096).decode()
                             command_option = client_msg[0]  # type of the command
-                            handle(self, connection, command_option, client_msg)
+                            self.HANDLE(self, connection, command_option, client_msg)
                         except Exception:  # case 4 (client wants to close the socket) or any other Exception with the socket
                             to_remove.append(connection)
 
