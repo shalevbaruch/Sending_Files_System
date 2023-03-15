@@ -27,7 +27,7 @@ class MyClient():
         if os.path.exists(filePath) and len(filename) != 0:  # if the file exists
             self.sendFile(filename)
         else:
-            print("Illegal Filename. Try Again")
+            print("Illegal Filename")
 
 
     def sendFile(self, filename):
@@ -35,40 +35,43 @@ class MyClient():
         with open(filePath, 'rb') as file_to_read:
             FileSize = os.path.getsize(filePath)
             if FileSize != 0:
-                self.sslSock.send("1 {} {}".format(filename, FileSize).encode())
+                self.sslSock.sendall("1 {} {}".format(filename, FileSize).encode())
                 print(self.sslSock.recv(1024).decode())  # a message from the server that he is starting to upload the file
                 fileContent = file_to_read.read()
-                self.sslSock.send(fileContent)
+                self.sslSock.sendall(fileContent)
                 print(self.sslSock.recv(1024).decode())  # a message from the server that he finished the upload
             else:
                 print("ERROR: the file is empty")
 
 
     def downloadFile(self, filename):
-        self.sslSock.send("2 {}".format(filename).encode())
-        message = self.sslSock.recv(22).decode()  # 22 because the length of the first message in this case is 21 bytes long
-        message = message.split(",")
-        print(message[0])
-        if message[0] != "start downloading":  #  we get this message from the server iff filename is legal
+        self.sslSock.sendall("2 {}".format(filename).encode())
+        isExist = self.sslSock.recv(5).decode()  # is the file requested actually exist
+          # 4 because the length of the first server message in this case is 4 bytes long
+        if isExist == "False":  #  we get this message from the server iff the file exists
+            print("ERROR: File Not Found ")
             return
-        
+        message = self.sslSock.recv(4)
+        fileSize = int.from_bytes(message, byteorder='big')
+        print("start downloading")
         with open(os.path.join(self.downloadUploadDir, filename), 'wb') as file_to_write:
-            fileSize = int(message[1])
-            data = self.sslSock.recv(fileSize)       
-            file_to_write.write(data)
-            end_message = self.sslSock.recv(17).decode()
-            print(end_message)
+            writtenBytes = 0  # counter for the bytes that we wrote to the file
+            while writtenBytes != fileSize:
+                data = self.sslSock.recv(1024)       
+                file_to_write.write(data)
+                writtenBytes += len(data)
+            print("download is finished")
         file_to_write.close()  # not sure if needed becasue of the usage of "with open"
 
     
     def availableFiles(self):
-        self.sslSock.send("3".encode())
+        self.sslSock.sendall("3".encode())
         message_from_server = self.sslSock.recv(4096).decode()
         return message_from_server
 
 
     def closeConnection(self):
-        self.sslSock.send("4".encode())
+        self.sslSock.sendall("4".encode())
         print("connection closed")
         self.sslSock.close()
 

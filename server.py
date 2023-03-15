@@ -13,40 +13,41 @@ def handle(server, ssl_client_soc, command_option, client_msg):  # the server me
             
         case '3':  # the client requests the list of the available files that the server holds
             fileList = " ".join(server.FILES_LIST)
-            ssl_client_soc.send("The available files to download are: {}".format(fileList).encode())
+            ssl_client_soc.sendall("The available files to download are: {}".format(fileList).encode())
             
         case '4':  # the client wants to close the connection
             raise ValueError("end of conversation")  # creating exception to close the socket
         case _:
-            ssl_client_soc.send("error - command option not found\n".encode())  # not in the protocol rules, actually can't get here
+            ssl_client_soc.sendall("error - command option not found\n".encode())  # not in the protocol rules, actually can't get here
 
 
 def case1(server, ssl_client_soc, client_msg): 
         client_msg = client_msg.split(" ")  # splitting between the type of the command, the filename and the file-size 
-        filename = client_msg[1]  # the name of the file that the client wants to upload, strip to remove the first space
-        ssl_client_soc.send("start uploading".encode())
+        filename = client_msg[1]  # the name of the file that the client wants to upload
+        ssl_client_soc.sendall("start uploading".encode())
         with open(os.path.join(server.FILES_DIR_PATH, filename), 'wb') as file_to_write:
             fileSize = int(client_msg[2])
-            data = ssl_client_soc.recv(fileSize)
-            file_to_write.write(data)
-            ssl_client_soc.send("upload is over".encode())
+            bytes_written = 0
+            while bytes_written != fileSize:
+                data = ssl_client_soc.recv(1024)
+                file_to_write.write(data)
+                bytes_written += len(data)
+            ssl_client_soc.sendall("upload is over".encode())
+            server.FILES_LIST.append(filename)
 
 
 def case2(server, ssl_client_soc, client_msg):
-    reqFile = client_msg[1:].strip()  # this is the file to be downloaded
+    reqFile = client_msg[1:].strip()  # this is the filename to be downloaded
     if reqFile in server.FILES_LIST:  # if the server has the file
+        ssl_client_soc.send("True ".encode())  # Padding with a space so that the message length will be 5 as "False"
         filePath = os.path.join(server.FILES_DIR_PATH, reqFile)
         with open(filePath, 'rb') as file_to_send:
             fileSize = os.path.getsize(filePath)
-            ssl_client_soc.send("start downloading,{}".format(fileSize).encode())  # this message is 22 bytes long
+            ssl_client_soc.sendall(fileSize.to_bytes(4, byteorder='big'))  # this message is 4 bytes long
             fileContent = file_to_send.read()
             ssl_client_soc.sendall(fileContent)
-            ssl_client_soc.sendall("download finished".encode())
-            # for data in file_to_send:
-            #     ssl_client_soc.sendall(data)
-            # ssl_client_soc.sendall("download finished".encode())
     else:
-        ssl_client_soc.send("ERROR: File Not Found ".encode())  # Padding a space so that the length of the message is 22
+        ssl_client_soc.sendall("False".encode())  
 
 
 
@@ -79,7 +80,7 @@ class My_Server():
                     if connection is listen_socket:  # a client wants to connect, probably starts the 3-way handshake of TCP
                         client_soc, client_address = listen_socket.accept()
                         ssl_client_soc = ssl.wrap_socket(client_soc, server_side=True, certfile="server.crt", keyfile="server.key")
-                        ssl_client_soc.send("Welcome\n".encode())
+                        ssl_client_soc.sendall("Welcome\n".encode())
                         connections.add(ssl_client_soc)
                     else:  # receive a message from a client - a request
                         try:
