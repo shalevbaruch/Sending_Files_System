@@ -19,7 +19,6 @@ class MyClient():
         server_address = (self.SERVER_IP, self.SERVER_PORT)
         ssl_sock.connect(server_address)
         self.sslSock = ssl_sock
-        print(self.sslSock.recv(4096).decode())  # the server sends a "Welcome" message
                     
 
     def uploadFile(self, filename):
@@ -36,10 +35,11 @@ class MyClient():
             FileSize = os.path.getsize(filePath)
             if FileSize != 0:
                 self.sslSock.sendall("1 {} {}".format(filename, FileSize).encode())
-                print(self.sslSock.recv(1024).decode())  # a message from the server that he is starting to upload the file
+                message = self.sslSock.recv(15).decode()
+                print(message)  # a message from the server that he is starting to upload the file
                 fileContent = file_to_read.read()
                 self.sslSock.sendall(fileContent)
-                print(self.sslSock.recv(1024).decode())  # a message from the server that he finished the upload
+                print("upload is finished")  # a message from the server that he finished the upload
             else:
                 print("ERROR: the file is empty")
 
@@ -51,8 +51,8 @@ class MyClient():
         if isExist == "False":  #  we get this message from the server iff the file exists
             print("ERROR: File Not Found ")
             return
-        message = self.sslSock.recv(4)
-        fileSize = int.from_bytes(message, byteorder='big')
+        fileSize = self.sslSock.recv(4)
+        fileSize = int.from_bytes(fileSize, byteorder='big')
         print("start downloading")
         with open(os.path.join(self.downloadUploadDir, filename), 'wb') as file_to_write:
             writtenBytes = 0  # counter for the bytes that we wrote to the file
@@ -66,8 +66,16 @@ class MyClient():
     
     def availableFiles(self):
         self.sslSock.sendall("3".encode())
-        message_from_server = self.sslSock.recv(4096).decode()
-        return message_from_server
+        listSize = self.sslSock.recv(4)
+        listSize = int.from_bytes(listSize, byteorder='big')
+        writtenBytes = 0  # counter for the bytes that we wrote to the file
+        filesList = b''
+        while writtenBytes != listSize:
+            data = self.sslSock.recv(1024)
+            filesList += data
+            writtenBytes += len(data)
+        filesList = filesList.decode()
+        return filesList
 
 
     def closeConnection(self):
