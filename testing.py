@@ -6,7 +6,7 @@ SERVER_PORT = 9124
 downloadUploadDir = "C:/University/YoungForTech/networks/Sending_Files_System/files_directory"
 client = client.MyClient(SERVER_IP, SERVER_PORT, downloadUploadDir)
 client.start()
-client.downloadFile("file123.txt")
+# client.downloadFile("file123.txt")
 # print(client.availableFiles())
 # client.uploadFile("file98.txt")
 # client.uploadFile("")

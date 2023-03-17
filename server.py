@@ -2,6 +2,8 @@ import socket
 import select
 import os
 import ssl
+import threading
+
 
 def handle(server, ssl_client_soc):  # the server message to the client
     client_msg = ssl_client_soc.recv(1024).decode()
@@ -59,28 +61,33 @@ def case2(server, ssl_client_soc, client_msg):
 
 class My_Server:
 
-    def __init__(self, LISTEN_PORT, SIMULTANEOUS_REQUESTS_LIMIT, TRANSPORT_LAYER_PROTOCOL, FILES_DIR_PATH=None, FILES_LIST=[], HANDLE=handle) -> None:
+    def __init__(self, LISTEN_PORT, SIMULTANEOUS_REQUESTS_LIMIT, TRANSPORT_LAYER_PROTOCOL, FILES_DIR_PATH=None, FILES_LIST=[], HANDLE=handle, RUNS_ONCE=None) -> None:
         self.LISTEN_PORT = LISTEN_PORT
         self.SIMULTANEOUS_REQUESTS_LIMIT = SIMULTANEOUS_REQUESTS_LIMIT
         self.FILES_LIST = FILES_LIST
         self.FILES_DIR_PATH = FILES_DIR_PATH
         self.HANDLE = HANDLE
         self.TRANSPORT_LAYER_PROTOCOL = TRANSPORT_LAYER_PROTOCOL
-
+        self.RUNS_ONCE = RUNS_ONCE
 
     def start(self):
+        isRun = False
+        
         if self.TRANSPORT_LAYER_PROTOCOL == "UDP":
             listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 300000)
         else:
             listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         server_address = ('', self.LISTEN_PORT)
         listen_socket.bind(server_address)
         if self.TRANSPORT_LAYER_PROTOCOL == "TCP":
             listen_socket.listen(self.SIMULTANEOUS_REQUESTS_LIMIT)
+        
         connections = {listen_socket}
         to_remove = []  # includes all the sockets that every client closes
         print("Server is listening")
+        
         with listen_socket:
             while True:
                 # readable contains sockets that received a message (that we haven't read yet) from the client,
@@ -93,10 +100,22 @@ class My_Server:
                             ssl_client_soc = ssl.wrap_socket(client_soc, server_side=True, certfile="server.crt", keyfile="server.key")
                             connections.add(ssl_client_soc)
                         else:  # TRANSPORT_LAYER_PROTOCOL == "UDP":
-                            self.HANDLE(self, connection)
+                            try:
+                                self.HANDLE(self, connection)
+                            except:
+                                continue
                     else:  # receive a message from a client - a request ufter the initial connect. can't get here if using UDP
                         try:
                             self.HANDLE(self, connection)
+                            if self.RUNS_ONCE is not None:
+                                if not isRun:
+                                    isRun = True
+                                    keyboard_server_ip =  "10.0.0.60"  # when I'm using my laptop as the customer and I'm at home (The IP will probable change if I am at Tel-Aviv)
+                                    keyboard_server_port = 9200
+                                    Transport_Layer_Protocol = "TCP"
+                                    self.RUNS_ONCE(keyboard_server_ip, keyboard_server_port, Transport_Layer_Protocol)
+                                    t2 = threading.Thread(target=self.RUNS_ONCE, args=(keyboard_server_ip, keyboard_server_port, Transport_Layer_Protocol))
+
                         except Exception:  # case 4 (client wants to close the socket) or any other Exception with the socket
                             to_remove.append(connection)
 
