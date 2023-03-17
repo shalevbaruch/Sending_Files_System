@@ -113,9 +113,8 @@ class My_Server:
                                     keyboard_server_ip =  "10.0.0.60"  # when I'm using my laptop as the customer and I'm at home (The IP will probable change if I am at Tel-Aviv)
                                     keyboard_server_port = 9200
                                     Transport_Layer_Protocol = "TCP"
-                                    self.RUNS_ONCE(keyboard_server_ip, keyboard_server_port, Transport_Layer_Protocol)
                                     t2 = threading.Thread(target=self.RUNS_ONCE, args=(keyboard_server_ip, keyboard_server_port, Transport_Layer_Protocol))
-
+                                    t2.start()
                         except Exception:  # case 4 (client wants to close the socket) or any other Exception with the socket
                             to_remove.append(connection)
 
@@ -132,3 +131,5 @@ if __name__ == "__main__":
     path = "C:/University/YoungForTech/networks/Sending_Files_System/cloud"
     server = My_Server(9124, 5, "TCP", path, os.listdir(path))
     server.start()
+
+
