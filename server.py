@@ -97,7 +97,8 @@ class My_Server:
                     if connection is listen_socket:  # a client sends a message
                         if self.TRANSPORT_LAYER_PROTOCOL == "TCP":
                             client_soc, client_address = listen_socket.accept()
-                            ssl_client_soc = ssl.wrap_socket(client_soc, server_side=True, certfile="server.crt", keyfile="server.key")
+                            # ssl_client_soc = ssl.wrap_socket(client_soc, server_side=True, certfile="server.crt", keyfile="server.key")
+                            ssl_client_soc = client_soc
                             connections.add(ssl_client_soc)
                         else:  # TRANSPORT_LAYER_PROTOCOL == "UDP":
                             try:
