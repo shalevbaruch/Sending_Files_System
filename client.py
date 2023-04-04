@@ -5,17 +5,16 @@ import os
 
 
 class MyClient():
-    def __init__(self, SERVER_IP, SERVER_PORT, downloadUploadDir, ssl_sock=None) -> None:
+    def __init__(self, SERVER_IP, SERVER_PORT, downloadUploadDir) -> None:
         self.SERVER_IP = SERVER_IP
         self.SERVER_PORT = SERVER_PORT
         self.downloadUploadDir = downloadUploadDir
-        self.sslSock = ssl_sock
 
-
-    def start(self):  # Create a TCP/IP socket
+        # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # Connecting to remote computer 9124
+        # Connecting to remote computer 9124
         ssl_sock = ssl.wrap_socket(sock)  # add a security layer
+        
         server_address = (self.SERVER_IP, self.SERVER_PORT)
         ssl_sock.connect(server_address)
         self.sslSock = ssl_sock
@@ -47,8 +46,8 @@ class MyClient():
     def downloadFile(self, filename):
         self.sslSock.sendall("2 {}".format(filename).encode())
         isExist = self.sslSock.recv(5).decode()  # is the file requested actually exist
-          # 4 because the length of the first server message in this case is 4 bytes long
-        if isExist == "False":  #  we get this message from the server iff the file exists
+          # 5 because the length of the first server message in this case is 5 bytes long
+        if isExist == "False": 
             print("ERROR: File Not Found ")
             return
         fileSize = self.sslSock.recv(4)
@@ -80,13 +79,17 @@ class MyClient():
 
     def closeConnection(self):
         self.sslSock.sendall("4".encode())
-        print("connection closed")
+        server_message = self.sslSock.recv(18).decode()
+        print(server_message)
         self.sslSock.close()
+        
 
 
 if __name__ == "__main__":
     SERVER_IP = "127.0.0.1"
     SERVER_PORT = 9124
-    downloadUploadDir = "C:/University/YoungForTech/networks/Sending_Files_System/files_directory"
+    downloadUploadDir = "C:/University/Cyber/networks/Sending_Files_System/files_directory"
     client = MyClient(SERVER_IP, SERVER_PORT, downloadUploadDir)
-    client.start()
+    # client.downloadFile("file123.txt")
+    print(client.availableFiles())
+    client.closeConnection()
