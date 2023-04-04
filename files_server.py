@@ -79,5 +79,5 @@ def case2(client_soc, client_msg):
 
 if __name__ == "__main__":
     get_files(path)
-    server = My_Server(listen_port, simultaneous_requests_limit, handle=handle)
+    server = My_Server(listen_port, simultaneous_requests_limit, handle=handle, is_secured=True)
     server.start()
