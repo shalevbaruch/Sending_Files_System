@@ -27,9 +27,9 @@ class My_Server:
                 if self.is_secured:
                     ssl_client_soc = ssl.wrap_socket(client_soc, server_side=True, certfile="server.crt", keyfile="server.key")
                 print("received new client")
-                # t1 = threading.Thread(target=self.handle, args=(ssl_client_soc, client_address))
-                # t1.start()
-                self.handle(ssl_client_soc, client_address)
+                t1 = threading.Thread(target=self.handle, args=(ssl_client_soc, client_address))
+                t1.start()
+                # self.handle(ssl_client_soc, client_address)
 
 
 
